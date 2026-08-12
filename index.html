@@ -1,0 +1,1751 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Program Command Center</title>
+  <style>
+    :root {
+      --ink: #1f2a37;
+      --muted: #667085;
+      --line: #d8dee8;
+      --paper: #f6f8fb;
+      --panel: #ffffff;
+      --green: #16a34a;
+      --yellow: #d97706;
+      --red: #dc2626;
+      --blue: #2563eb;
+      --teal: #0f766e;
+      --violet: #7c3aed;
+      --shadow: 0 12px 30px rgba(31, 42, 55, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--ink);
+      border-radius: 6px;
+      min-height: 36px;
+      padding: 0 12px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      border-color: #b7c1d1;
+      box-shadow: 0 2px 8px rgba(31, 42, 55, 0.08);
+    }
+
+    button.primary {
+      border-color: var(--blue);
+      background: var(--blue);
+      color: white;
+    }
+
+    button.locked {
+      border-color: #fbbf24;
+      background: #fffbeb;
+      color: #92400e;
+    }
+
+    button.icon {
+      width: 36px;
+      padding: 0;
+      display: inline-grid;
+      place-items: center;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: white;
+      color: var(--ink);
+      padding: 9px 10px;
+      outline: none;
+    }
+
+    textarea {
+      min-height: 82px;
+      resize: vertical;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    .status-select {
+      width: auto;
+      min-width: 150px;
+      max-width: 100%;
+      color: var(--ink);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+    }
+
+    .sidebar {
+      background: #ffffff;
+      border-right: 1px solid var(--line);
+      padding: 20px 16px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: auto;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 22px;
+    }
+
+    .brand-mark {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: #123c69;
+      color: white;
+      font-weight: 800;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 17px;
+      line-height: 1.15;
+    }
+
+    .brand p {
+      margin: 2px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .nav {
+      display: grid;
+      gap: 6px;
+    }
+
+    .nav button {
+      justify-content: flex-start;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      border-color: transparent;
+      background: transparent;
+    }
+
+    .nav button.active {
+      background: #eef4ff;
+      border-color: #c7d7fe;
+      color: #1d4ed8;
+    }
+
+    .sidebar-section {
+      margin-top: 24px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+    }
+
+    .sidebar-section h2 {
+      margin: 0 0 10px;
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .health-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .health-item {
+      display: grid;
+      gap: 5px;
+      font-size: 12px;
+    }
+
+    .health-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .bar {
+      height: 7px;
+      background: #e6ebf2;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar span {
+      display: block;
+      height: 100%;
+      width: var(--w);
+      background: var(--c);
+    }
+
+    .main {
+      min-width: 0;
+      padding: 24px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      align-items: flex-start;
+      margin-bottom: 20px;
+    }
+
+    .title-block h2 {
+      margin: 0;
+      font-size: 26px;
+      line-height: 1.2;
+    }
+
+    .title-block p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      max-width: 760px;
+      line-height: 1.5;
+    }
+
+    [contenteditable="true"] {
+      border-radius: 6px;
+      outline: none;
+      cursor: text;
+    }
+
+    [contenteditable="true"]:hover {
+      background: #eef4ff;
+      box-shadow: 0 0 0 4px #eef4ff;
+    }
+
+    [contenteditable="true"]:focus {
+      background: #ffffff;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+    }
+
+    .editable-muted {
+      color: var(--muted);
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .sync-state {
+      color: var(--muted);
+      font-size: 12px;
+      align-self: center;
+    }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .overview-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .metric {
+      padding: 16px;
+      display: grid;
+      gap: 8px;
+      min-height: 116px;
+    }
+
+    .metric .label {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .metric .value {
+      font-size: 28px;
+      font-weight: 750;
+    }
+
+    .metric .hint {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .section {
+      margin-top: 18px;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .section-head h3 {
+      margin: 0;
+      font-size: 17px;
+    }
+
+    .section-head p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .workstream-grid {
+      width: 100%;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .workstream {
+      padding: 15px;
+      display: grid;
+      gap: 12px;
+      min-height: 260px;
+    }
+
+    .workstream-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .workstream-title {
+      min-width: 0;
+    }
+
+    .workstream-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .danger-button {
+      border-color: #fecaca;
+      color: var(--red);
+      background: #fff7f7;
+    }
+
+    .danger-button:hover {
+      border-color: #fca5a5;
+      box-shadow: 0 2px 8px rgba(220, 38, 38, 0.12);
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 0 8px;
+      border-radius: 999px;
+      background: #eef2f7;
+      color: #42526e;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .status {
+      font-weight: 750;
+    }
+
+    .status.green {
+      color: var(--green);
+    }
+
+    .status.yellow {
+      color: var(--yellow);
+    }
+
+    .status.red {
+      color: var(--red);
+    }
+
+    .workstream h4 {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.35;
+    }
+
+    .workstream-owner {
+      display: inline-block;
+      min-height: 24px;
+      padding: 4px 8px;
+    }
+
+    .owner {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .task-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .task {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: start;
+      gap: 8px;
+      padding: 8px;
+      border: 1px solid #edf0f5;
+      border-radius: 6px;
+      background: #fbfcfe;
+    }
+
+    .task input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      padding: 0;
+      accent-color: var(--green);
+    }
+
+    .task-name {
+      min-width: 0;
+      overflow-wrap: anywhere;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .task-owner,
+    .task-date {
+      min-height: 28px;
+      padding: 5px 7px;
+      font-size: 12px;
+      color: #42526e;
+      background: #ffffff;
+    }
+
+    .task-meta {
+      grid-column: 2 / 3;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .task.done .task-name {
+      color: var(--muted);
+      text-decoration: line-through;
+    }
+
+    .task button {
+      min-height: 26px;
+      width: 26px;
+      padding: 0;
+      color: var(--muted);
+    }
+
+    .compact-form {
+      display: grid;
+      gap: 8px;
+    }
+
+    .inline-form {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 8px;
+      align-items: center;
+    }
+
+    .milestones {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .milestone {
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+      min-height: 180px;
+    }
+
+    .milestone h4 {
+      margin: 0;
+      font-size: 15px;
+    }
+
+    .milestone p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .date-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+      gap: 8px;
+    }
+
+    .date-field {
+      display: grid;
+      gap: 4px;
+    }
+
+    .date-field label {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 650;
+    }
+
+    .date-field input {
+      min-height: 32px;
+      padding: 6px 8px;
+      font-size: 12px;
+    }
+
+    .timeline {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 0;
+      margin: 14px 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: white;
+    }
+
+    .timeline-step {
+      padding: 12px;
+      border-right: 1px solid var(--line);
+      min-height: 72px;
+    }
+
+    .timeline-step:last-child {
+      border-right: 0;
+    }
+
+    .timeline-step strong {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 5px;
+    }
+
+    .timeline-step span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .update-layout {
+      display: grid;
+      grid-template-columns: 360px minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .form-panel,
+    .updates-panel,
+    .raci-panel {
+      padding: 16px;
+    }
+
+    .form-panel h3,
+    .updates-panel h3,
+    .raci-panel h3 {
+      margin: 0 0 12px;
+      font-size: 17px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .field label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .updates {
+      display: grid;
+      gap: 10px;
+    }
+
+    .update {
+      border: 1px solid #edf0f5;
+      border-radius: 8px;
+      padding: 12px;
+      background: #fbfcfe;
+      display: grid;
+      gap: 8px;
+    }
+
+    .update-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .update-body {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .note {
+      border-left: 3px solid var(--blue);
+      padding-left: 9px;
+      min-width: 0;
+    }
+
+    .note strong {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 3px;
+    }
+
+    .note span {
+      display: block;
+      font-size: 13px;
+      overflow-wrap: anywhere;
+      line-height: 1.4;
+    }
+
+    .raci-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .raci-table th,
+    .raci-table td {
+      border-bottom: 1px solid var(--line);
+      padding: 10px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .raci-table th {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .drawer {
+      position: fixed;
+      inset: 0;
+      background: rgba(31, 42, 55, 0.35);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 20;
+    }
+
+    .drawer.open {
+      display: flex;
+    }
+
+    .dialog {
+      width: min(620px, 100%);
+      max-height: calc(100vh - 40px);
+      overflow: auto;
+      padding: 18px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 20px 70px rgba(31, 42, 55, 0.2);
+      display: grid;
+      gap: 12px;
+    }
+
+    .dialog-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .dialog-head h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .empty {
+      padding: 18px;
+      color: var(--muted);
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      background: #fbfcfe;
+      text-align: center;
+    }
+
+    .screen {
+      display: none;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    @media (min-width: 1680px) {
+      .workstream-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 1120px) {
+      .overview-grid,
+      .milestones,
+      .timeline,
+      .update-body {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .update-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+        height: auto;
+      }
+
+      .main {
+        padding: 16px;
+      }
+
+      .topbar {
+        flex-direction: column;
+      }
+
+      .actions {
+        justify-content: flex-start;
+      }
+
+      .overview-grid,
+      .workstream-grid,
+      .milestones,
+      .timeline,
+      .update-body {
+        grid-template-columns: 1fr;
+      }
+
+      .timeline-step {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .workstream-top {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+
+      .workstream-controls {
+        justify-content: flex-start;
+      }
+
+      .status-select {
+        width: 100%;
+      }
+
+      .task,
+      .inline-form {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+      }
+
+      .task-meta,
+      .inline-form input[name="owner"],
+      .inline-form input[name="targetDate"],
+      .inline-form input[name="actualDate"] {
+        grid-column: 2 / -1;
+      }
+
+      .task-meta {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">PM</div>
+        <div>
+          <h1>Program Command Center</h1>
+          <p>Program Management 快速跟进工具</p>
+        </div>
+      </div>
+      <nav class="nav" aria-label="主要视图">
+        <button class="active" data-screen-target="dashboard">⌁ Overview</button>
+        <button data-screen-target="structure">□ Workstreams</button>
+        <button data-screen-target="milestones">◇ Milestones</button>
+        <button data-screen-target="updates">✎ Weekly Updates</button>
+        <button data-screen-target="raci">≡ RACI</button>
+      </nav>
+      <div class="sidebar-section">
+        <h2>Workstream Health</h2>
+        <div class="health-list" id="healthList"></div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div class="title-block">
+          <h2 id="programName" contenteditable="true" data-action="edit-program-field" data-field="name"></h2>
+          <p id="programSummary" contenteditable="true" data-action="edit-program-field" data-field="summary"></p>
+        </div>
+        <div class="actions">
+          <span class="sync-state" id="syncState">Local mode</span>
+          <button class="locked" title="登录后编辑" id="authBtn">Sign In</button>
+          <button title="导出当前 Program 数据" id="exportBtn">Export JSON</button>
+          <button title="导入 Program JSON 数据" id="importBtn">Import JSON</button>
+          <button class="primary" title="新增工作流" id="addWorkstreamBtn">Add Workstream</button>
+        </div>
+      </div>
+
+      <section class="screen active" id="dashboard">
+        <div class="grid overview-grid">
+          <div class="panel metric">
+            <span class="label">Overall Progress</span>
+            <span class="value" id="overallProgress">0%</span>
+            <div class="bar"><span id="overallBar"></span></div>
+            <span class="hint">由全部任务完成率自动计算</span>
+          </div>
+          <div class="panel metric">
+            <span class="label">Milestone Progress</span>
+            <span class="value" id="milestoneProgress">0/0</span>
+            <div class="bar"><span id="milestoneBar"></span></div>
+            <span class="hint">Done / Total</span>
+          </div>
+          <div class="panel metric">
+            <span class="label">Open Blockers</span>
+            <span class="value" id="blockerCount">0</span>
+            <span class="hint">来自 Weekly Updates 的阻塞项</span>
+          </div>
+          <div class="panel metric">
+            <span class="label">Target Completion</span>
+            <span class="value">2026 Q3</span>
+            <span class="hint">Sponsor: COO Alex</span>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-head">
+            <div>
+              <h3>Program Structure</h3>
+              <p>把 Program 拆成 Workstream，再拆成可跟进任务。</p>
+            </div>
+          </div>
+          <div class="grid workstream-grid" id="dashboardWorkstreams"></div>
+        </div>
+      </section>
+
+      <section class="screen" id="structure">
+        <div class="section-head">
+          <div>
+            <h3>Workstreams & Deliverables</h3>
+            <p>用于展示大目标、责任人、状态和任务完成情况。</p>
+          </div>
+        </div>
+        <div class="grid workstream-grid" id="workstreamGrid"></div>
+      </section>
+
+      <section class="screen" id="milestones">
+        <div class="section-head">
+          <div>
+            <h3>Q3 Milestone Tracker</h3>
+            <p>只保留少量高级里程碑，避免把 Program 管成任务清单。</p>
+          </div>
+        </div>
+        <div class="timeline" id="timeline"></div>
+        <div class="milestones" id="milestoneGrid"></div>
+      </section>
+
+      <section class="screen" id="updates">
+        <div class="update-layout">
+          <form class="panel form-panel compact-form" id="updateForm">
+            <h3>Weekly Steering Update</h3>
+            <div class="field">
+              <label for="submitterName">Name</label>
+              <input id="submitterName" placeholder="提交人姓名" required>
+            </div>
+            <div class="field">
+              <label for="updateWorkstream">Workstream</label>
+              <select id="updateWorkstream" required></select>
+            </div>
+            <div class="field">
+              <label for="updateStatus">Status</label>
+              <select id="updateStatus">
+                <option value="green">Green / On Track</option>
+                <option value="yellow">Yellow / At Risk</option>
+                <option value="red">Red / Blocked</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="doneText">完成了什么</label>
+              <textarea id="doneText" required></textarea>
+            </div>
+            <div class="field">
+              <label for="nextText">下周做什么</label>
+              <textarea id="nextText" required></textarea>
+            </div>
+            <div class="field">
+              <label for="blockerText">Blocker</label>
+              <textarea id="blockerText" placeholder="没有则写 None"></textarea>
+            </div>
+            <div class="field">
+              <label for="supportText">需要谁支持</label>
+              <textarea id="supportText" placeholder="例如 CEO / Finance / Legal"></textarea>
+            </div>
+            <button class="primary" type="submit">Save Update</button>
+          </form>
+          <div class="panel updates-panel">
+            <h3>Latest Updates</h3>
+            <div class="updates" id="updatesList"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen" id="raci">
+        <div class="panel raci-panel">
+          <h3>High-Level RACI</h3>
+          <table class="raci-table">
+            <thead>
+              <tr>
+                <th>Workstream</th>
+                <th>A</th>
+                <th>R</th>
+                <th>C</th>
+                <th>I</th>
+              </tr>
+            </thead>
+            <tbody id="raciTable"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="drawer" id="workstreamDialog" role="dialog" aria-modal="true">
+    <form class="dialog compact-form" id="workstreamForm">
+      <div class="dialog-head">
+        <h3>Add Workstream</h3>
+        <button class="icon" type="button" title="关闭" id="closeDialogBtn">×</button>
+      </div>
+      <div class="field">
+        <label for="wsName">Name</label>
+        <input id="wsName" required>
+      </div>
+      <div class="field">
+        <label for="wsOwner">Owner</label>
+        <input id="wsOwner" required>
+      </div>
+      <div class="field">
+        <label for="wsGoal">Goal</label>
+        <textarea id="wsGoal" required></textarea>
+      </div>
+      <div class="grid overview-grid">
+        <div class="field">
+          <label for="wsA">A</label>
+          <input id="wsA">
+        </div>
+        <div class="field">
+          <label for="wsR">R</label>
+          <input id="wsR">
+        </div>
+        <div class="field">
+          <label for="wsC">C</label>
+          <input id="wsC">
+        </div>
+        <div class="field">
+          <label for="wsI">I</label>
+          <input id="wsI">
+        </div>
+      </div>
+      <button class="primary" type="submit">Create Workstream</button>
+    </form>
+  </div>
+
+  <input id="fileInput" type="file" accept="application/json" hidden>
+
+  <script>
+    const storageKey = "program-command-center-v1";
+
+    const seedData = {
+      name: "SKYONE Hong Kong Launch Program",
+      summary: "Q3 2026 Execution Framework: 到 2026 Q3 结束时，SkyOne 成为独立运营、具备港府科技企业潜力、拥有核心团队的香港科技公司。",
+      workstreams: [
+        {
+          id: "corporate",
+          name: "Corporate & Governance",
+          owner: "CEO / Legal / Finance",
+          goal: "让 SkyOne 成为真正独立公司。",
+          status: "yellow",
+          raci: { a: "CEO", r: "Finance", c: "Legal", i: "COO" },
+          tasks: [
+            { id: "cg-1", name: "独立治理结构", owner: "CEO", done: true },
+            { id: "cg-2", name: "银行账户", owner: "Finance", done: false },
+            { id: "cg-3", name: "服务合同", owner: "Legal", done: false },
+            { id: "cg-4", name: "IP 归属", owner: "Legal", done: false },
+            { id: "cg-5", name: "财务 / Tax / 审计体系", owner: "Finance", done: false }
+          ]
+        },
+        {
+          id: "business",
+          name: "Business Operation",
+          owner: "COO",
+          goal: "让 SkyOne 真正开始运营并产生收入记录。",
+          status: "yellow",
+          raci: { a: "COO", r: "Operations", c: "Finance", i: "CEO" },
+          tasks: [
+            { id: "bo-1", name: "Exclusive Agreement - SupremeOne", owner: "COO", done: false },
+            { id: "bo-2", name: "Service Agreement - OpCo", owner: "Operations", done: false },
+            { id: "bo-3", name: "Service Agreement - RB Workforce", owner: "Operations", done: false },
+            { id: "bo-4", name: "收费模式与 Cost Plus 机制", owner: "Finance", done: false },
+            { id: "bo-5", name: "月度 Closing 流程", owner: "Finance", done: false }
+          ]
+        },
+        {
+          id: "product",
+          name: "Technology & Product",
+          owner: "CTO / AI Partner",
+          goal: "形成真正的科技公司产品能力。",
+          status: "yellow",
+          raci: { a: "CTO", r: "Product Team", c: "COO", i: "CEO" },
+          tasks: [
+            { id: "tp-1", name: "产品 Roadmap", owner: "CTO", done: true },
+            { id: "tp-2", name: "Product Backlog", owner: "Product", done: false },
+            { id: "tp-3", name: "产品版本与 Release 流程", owner: "Product", done: false },
+            { id: "tp-4", name: "产品 Demo", owner: "AI Partner", done: false },
+            { id: "tp-5", name: "技术文档与 R&D 记录", owner: "CTO", done: false }
+          ]
+        },
+        {
+          id: "hkstp",
+          name: "HKSTP Readiness",
+          owner: "HR / Strategy / Consultant",
+          goal: "达到 Ready for HKSTP Assessment。",
+          status: "red",
+          raci: { a: "COO", r: "HR", c: "External Consultant", i: "CEO" },
+          tasks: [
+            { id: "hk-1", name: "科技企业定位", owner: "Strategy", done: true },
+            { id: "hk-2", name: "香港研发预算", owner: "Finance", done: false },
+            { id: "hk-3", name: "香港研发计划", owner: "CTO", done: false },
+            { id: "hk-4", name: "香港办公室与研发团队", owner: "HR", done: false },
+            { id: "hk-5", name: "Pitch Deck 与 HKSTP 材料", owner: "Consultant", done: false }
+          ]
+        },
+        {
+          id: "people",
+          name: "People Migration",
+          owner: "HR",
+          goal: "完成第一批核心人员迁移。",
+          status: "yellow",
+          raci: { a: "HR Director", r: "HR", c: "COO", i: "CEO" },
+          tasks: [
+            { id: "pm-1", name: "第一批名单", owner: "HR", done: true },
+            { id: "pm-2", name: "签证路径", owner: "HR", done: false },
+            { id: "pm-3", name: "Offer 与香港劳动合同", owner: "HR", done: false },
+            { id: "pm-4", name: "Payroll / MPF / Insurance", owner: "HR", done: false },
+            { id: "pm-5", name: "Onboarding", owner: "HR", done: false }
+          ]
+        },
+        {
+          id: "assets",
+          name: "Technology Asset & IP Formation",
+          owner: "CTO / Legal / Product",
+          goal: "沉淀未来融资、估值和香港研发实质所需的技术资产。",
+          status: "yellow",
+          raci: { a: "CTO", r: "Product Team", c: "Legal / COO", i: "CEO" },
+          tasks: [
+            { id: "ai-1", name: "TI 平台 / Portal / AI Agent 源代码归属", owner: "CTO", done: false },
+            { id: "ai-2", name: "Git 仓库、版本管理、研发记录标准化", owner: "CTO", done: false },
+            { id: "ai-3", name: "Release Notes 标准", owner: "Product", done: false },
+            { id: "ai-4", name: "软件著作权、商标、专利与 IP 规划", owner: "Legal", done: false },
+            { id: "ai-5", name: "产品文档、API 文档、架构图", owner: "Product", done: false }
+          ]
+        }
+      ],
+      milestones: [
+        { id: "m1", name: "M1 SkyOne Ready to Operate", detail: "法律主体、合同、财务、银行完成。", status: "yellow", targetDate: "2026-07-31", actualDate: "" },
+        { id: "m2", name: "M2 Business Started", detail: "向 SupremeOne / OpCo 提供正式服务并开始产生 Revenue。", status: "red", targetDate: "2026-08-15", actualDate: "" },
+        { id: "m3", name: "M3 HKSTP Ready", detail: "完成 HKSTP 准备，达到 Ready 状态。", status: "red", targetDate: "2026-08-31", actualDate: "" },
+        { id: "m4", name: "M4 Core Team Ready", detail: "第一批核心团队正式到岗。", status: "yellow", targetDate: "2026-09-15", actualDate: "" },
+        { id: "m5", name: "M5 Q3 Program Complete", detail: "SkyOne 正式独立运营。", status: "red", targetDate: "2026-09-30", actualDate: "" }
+      ],
+      updates: []
+    };
+
+    const supabaseUrl = "https://ypxoyqhkwdpdbrfnbyzw.supabase.co";
+    const supabaseKey = "sb_publishable_ysSFwIL1J459tv2cSYwFnQ_qt5gSRY7";
+    const programId = "skyone-hk-launch";
+    const isCloudMode = location.protocol !== "file:";
+    let data = loadData();
+    let canEdit = !isCloudMode;
+    let isReady = !isCloudMode;
+    let accessToken = localStorage.getItem("pm_supabase_access_token") || "";
+    let currentUserEmail = localStorage.getItem("pm_user_email") || "";
+    let saveTimer = null;
+
+    const screens = document.querySelectorAll(".screen");
+    const navButtons = document.querySelectorAll("[data-screen-target]");
+    const dialog = document.getElementById("workstreamDialog");
+
+    function loadData() {
+      try {
+        const saved = localStorage.getItem(storageKey);
+        return saved ? JSON.parse(saved) : structuredClone(seedData);
+      } catch (error) {
+        return structuredClone(seedData);
+      }
+    }
+
+    function saveLocalData() {
+      localStorage.setItem(storageKey, JSON.stringify(data));
+    }
+
+    function saveData() {
+      saveLocalData();
+      if (!isCloudMode || !canEdit || !isReady) return;
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(syncToCloud, 300);
+    }
+
+    function supabaseHeaders(useAuth = false) {
+      const headers = {
+        apikey: supabaseKey,
+        authorization: `Bearer ${useAuth && accessToken ? accessToken : supabaseKey}`,
+        "content-type": "application/json"
+      };
+      return headers;
+    }
+
+    async function syncToCloud() {
+      try {
+        setSyncState("Saving...");
+        const response = await fetch(`${supabaseUrl}/rest/v1/program_state?on_conflict=id`, {
+          method: "POST",
+          headers: {
+            ...supabaseHeaders(true),
+            prefer: "resolution=merge-duplicates,return=minimal"
+          },
+          body: JSON.stringify({
+            id: programId,
+            data,
+            updated_at: new Date().toISOString()
+          })
+        });
+        if (response.status === 401) {
+          canEdit = false;
+          render();
+          setSyncState("Sign in required");
+          return;
+        }
+        if (!response.ok) throw new Error(await response.text());
+        setSyncState(`Cloud editable · saved${currentUserEmail ? ` · ${currentUserEmail}` : ""}`);
+      } catch (error) {
+        console.error(error);
+        setSyncState("Save failed · check editor access");
+      }
+    }
+
+    async function loadCloudData() {
+      if (!isCloudMode) {
+        setSyncState("Local mode");
+        render();
+        return;
+      }
+
+      try {
+        setSyncState("Loading cloud data...");
+        await handleSupabaseAuthCallback();
+        const response = await fetch(`${supabaseUrl}/rest/v1/program_state?id=eq.${programId}&select=data,updated_at`, {
+          headers: supabaseHeaders(false)
+        });
+        if (!response.ok) throw new Error(await response.text());
+        const rows = await response.json();
+        if (rows[0]?.data) {
+          data = rows[0].data;
+          saveLocalData();
+        }
+        canEdit = Boolean(accessToken);
+        isReady = true;
+        render();
+        setSyncState(canEdit ? `Cloud editable · ${currentUserEmail || "signed in"}` : "Cloud read-only");
+      } catch (error) {
+        console.error(error);
+        isReady = true;
+        render();
+        setSyncState("Cloud unavailable · local fallback");
+      }
+    }
+
+    function setSyncState(text) {
+      const target = document.getElementById("syncState");
+      if (target) target.textContent = text;
+    }
+
+    async function handleSupabaseAuthCallback() {
+      const hash = new URLSearchParams(location.hash.slice(1));
+      const token = hash.get("access_token");
+      if (!token) return;
+
+      accessToken = token;
+      localStorage.setItem("pm_supabase_access_token", accessToken);
+      history.replaceState(null, "", location.pathname + location.search);
+
+      const userResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
+        headers: {
+          apikey: supabaseKey,
+          authorization: `Bearer ${accessToken}`
+        }
+      });
+      if (userResponse.ok) {
+        const user = await userResponse.json();
+        currentUserEmail = user.email || "";
+        localStorage.setItem("pm_user_email", currentUserEmail);
+      }
+    }
+
+    function setEditableText(element, value) {
+      if (document.activeElement === element) return;
+      element.textContent = value || "";
+    }
+
+    function percent(done, total) {
+      return total === 0 ? 0 : Math.round((done / total) * 100);
+    }
+
+    function workstreamProgress(ws) {
+      return percent(ws.tasks.filter((task) => task.done).length, ws.tasks.length);
+    }
+
+    function statusLabel(status) {
+      if (status === "green") return "🟢";
+      if (status === "yellow") return "🟡";
+      return "🔴";
+    }
+
+    function statusColor(status) {
+      if (status === "green") return "var(--green)";
+      if (status === "yellow") return "var(--yellow)";
+      return "var(--red)";
+    }
+
+    function guardEdit() {
+      if (canEdit) return true;
+      alert("Read-only mode. Sign in with an editor email to make changes.");
+      return false;
+    }
+
+    function render() {
+      setEditableText(document.getElementById("programName"), data.name);
+      setEditableText(document.getElementById("programSummary"), data.summary);
+      document.getElementById("programName").contentEditable = canEdit;
+      document.getElementById("programSummary").contentEditable = canEdit;
+      document.getElementById("authBtn").textContent = canEdit ? "Sign Out" : "Sign In";
+      document.getElementById("authBtn").classList.toggle("locked", !canEdit);
+      document.getElementById("addWorkstreamBtn").disabled = !canEdit;
+      renderMetrics();
+      renderHealth();
+      renderWorkstreams("workstreamGrid", canEdit);
+      renderWorkstreams("dashboardWorkstreams", canEdit);
+      renderMilestones();
+      renderUpdates();
+      renderRaci();
+      renderUpdateOptions();
+    }
+
+    function renderMetrics() {
+      const tasks = data.workstreams.flatMap((ws) => ws.tasks);
+      const doneTasks = tasks.filter((task) => task.done).length;
+      const overall = percent(doneTasks, tasks.length);
+      const doneMilestones = data.milestones.filter((m) => m.status === "green").length;
+      const milestonePct = percent(doneMilestones, data.milestones.length);
+      const blockers = data.updates.filter((update) => update.blocker && update.blocker.toLowerCase() !== "none").length;
+
+      document.getElementById("overallProgress").textContent = `${overall}%`;
+      document.getElementById("overallBar").style.cssText = `--w:${overall}%;--c:var(--blue);`;
+      document.getElementById("milestoneProgress").textContent = `${doneMilestones}/${data.milestones.length}`;
+      document.getElementById("milestoneBar").style.cssText = `--w:${milestonePct}%;--c:var(--teal);`;
+      document.getElementById("blockerCount").textContent = blockers;
+    }
+
+    function renderHealth() {
+      document.getElementById("healthList").innerHTML = data.workstreams.map((ws) => {
+        const progress = workstreamProgress(ws);
+        return `
+          <div class="health-item">
+            <div class="health-row"><span>${escapeHtml(ws.name)}</span><strong>${progress}%</strong></div>
+            <div class="bar"><span style="--w:${progress}%;--c:${statusColor(ws.status)};"></span></div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderWorkstreams(targetId, editable) {
+      const target = document.getElementById(targetId);
+      target.innerHTML = data.workstreams.map((ws) => {
+        const progress = workstreamProgress(ws);
+        const tasks = ws.tasks.map((task) => `
+          <div class="task ${task.done ? "done" : ""}">
+            <input type="checkbox" ${task.done ? "checked" : ""} data-action="toggle-task" data-ws="${ws.id}" data-task="${task.id}">
+            <span class="task-name">${escapeHtml(task.name)}</span>
+            ${editable ? `<button type="button" title="删除任务" data-action="delete-task" data-ws="${ws.id}" data-task="${task.id}">×</button>` : ""}
+            <div class="task-meta">
+              <input class="task-owner" value="${escapeHtml(task.owner || "")}" placeholder="Owner" data-action="update-task-owner" data-ws="${ws.id}" data-task="${task.id}" aria-label="Task owner">
+              <input class="task-date" type="date" value="${escapeHtml(task.targetDate || "")}" data-action="update-task-date" data-field="targetDate" data-ws="${ws.id}" data-task="${task.id}" aria-label="目标完成时间">
+              <input class="task-date" type="date" value="${escapeHtml(task.actualDate || "")}" data-action="update-task-date" data-field="actualDate" data-ws="${ws.id}" data-task="${task.id}" aria-label="实际完成时间">
+            </div>
+          </div>
+        `).join("");
+        return `
+          <article class="panel workstream">
+            <div class="workstream-top">
+              <div class="workstream-title">
+                <span class="tag workstream-owner" contenteditable="${editable}" data-action="edit-workstream-field" data-ws="${ws.id}" data-field="owner">${escapeHtml(ws.owner)}</span>
+                <h4 contenteditable="${editable}" data-action="edit-workstream-field" data-ws="${ws.id}" data-field="name">${escapeHtml(ws.name)}</h4>
+              </div>
+              <div class="workstream-controls">
+                <select class="status-select" data-action="set-ws-status" data-ws="${ws.id}" aria-label="Workstream status">
+                  <option value="green" ${ws.status === "green" ? "selected" : ""}>🟢 Green / On Track</option>
+                  <option value="yellow" ${ws.status === "yellow" ? "selected" : ""}>🟡 Yellow / At Risk</option>
+                  <option value="red" ${ws.status === "red" ? "selected" : ""}>🔴 Red / Blocked</option>
+                </select>
+                ${editable ? `<button class="icon danger-button" type="button" title="删除 Workstream" data-action="delete-workstream" data-ws="${ws.id}">×</button>` : ""}
+              </div>
+            </div>
+            <div class="owner editable-muted" contenteditable="${editable}" data-action="edit-workstream-field" data-ws="${ws.id}" data-field="goal">${escapeHtml(ws.goal)}</div>
+            <div class="bar"><span style="--w:${progress}%;--c:${statusColor(ws.status)};"></span></div>
+            <div class="task-list">${tasks || `<div class="empty">No tasks</div>`}</div>
+            ${editable ? `
+              <form class="inline-form" data-action="add-task" data-ws="${ws.id}">
+                <input name="task" placeholder="新增 deliverable / task" required>
+                <input name="owner" placeholder="Owner">
+                <input name="targetDate" type="date" aria-label="目标完成时间">
+                <input name="actualDate" type="date" aria-label="实际完成时间">
+                <button type="submit" title="新增任务">＋</button>
+              </form>
+            ` : ""}
+          </article>
+        `;
+      }).join("");
+    }
+
+    function renderMilestones() {
+      document.getElementById("timeline").innerHTML = data.milestones.map((m) => `
+        <div class="timeline-step">
+          <strong>${statusLabel(m.status)} ${escapeHtml(m.name.split(" ")[0])}</strong>
+          <span>${escapeHtml(m.name.replace(/^M\d+\s*/, ""))}</span>
+        </div>
+      `).join("");
+
+      document.getElementById("milestoneGrid").innerHTML = data.milestones.map((m) => `
+        <article class="panel milestone">
+          <select class="status-select" data-action="set-milestone-status" data-milestone="${m.id}" aria-label="Milestone status">
+            <option value="green" ${m.status === "green" ? "selected" : ""}>🟢 Green / Done</option>
+            <option value="yellow" ${m.status === "yellow" ? "selected" : ""}>🟡 Yellow / At Risk</option>
+            <option value="red" ${m.status === "red" ? "selected" : ""}>🔴 Red / Blocked</option>
+          </select>
+          <h4 contenteditable="true" data-action="edit-milestone-field" data-milestone="${m.id}" data-field="name">${escapeHtml(m.name)}</h4>
+          <p contenteditable="true" data-action="edit-milestone-field" data-milestone="${m.id}" data-field="detail">${escapeHtml(m.detail)}</p>
+          <div class="date-row">
+            <div class="date-field">
+              <label>目标完成时间</label>
+              <input type="date" value="${escapeHtml(m.targetDate || "")}" data-action="update-milestone-date" data-field="targetDate" data-milestone="${m.id}">
+            </div>
+            <div class="date-field">
+              <label>实际完成时间</label>
+              <input type="date" value="${escapeHtml(m.actualDate || "")}" data-action="update-milestone-date" data-field="actualDate" data-milestone="${m.id}">
+            </div>
+          </div>
+        </article>
+      `).join("");
+    }
+
+    function renderUpdates() {
+      const list = document.getElementById("updatesList");
+      if (data.updates.length === 0) {
+        list.innerHTML = `<div class="empty">No weekly updates yet</div>`;
+        return;
+      }
+
+      list.innerHTML = [...data.updates].reverse().map((update) => `
+        <article class="update">
+          <div class="update-head">
+            <strong>${statusLabel(update.status)} ${escapeHtml(update.workstreamName)}</strong>
+            <span>${escapeHtml(update.submitterName || "Unknown")} · ${escapeHtml(update.date)}</span>
+          </div>
+          <div class="update-body">
+            <div class="note"><strong>完成了什么</strong><span>${escapeHtml(update.done)}</span></div>
+            <div class="note"><strong>下周做什么</strong><span>${escapeHtml(update.next)}</span></div>
+            <div class="note"><strong>Blocker</strong><span>${escapeHtml(update.blocker || "None")}</span></div>
+            <div class="note"><strong>需要谁支持</strong><span>${escapeHtml(update.support || "None")}</span></div>
+          </div>
+        </article>
+      `).join("");
+    }
+
+    function renderRaci() {
+      document.getElementById("raciTable").innerHTML = data.workstreams.map((ws) => `
+        <tr>
+          <td>${escapeHtml(ws.name)}</td>
+          <td>${escapeHtml(ws.raci.a || "")}</td>
+          <td>${escapeHtml(ws.raci.r || "")}</td>
+          <td>${escapeHtml(ws.raci.c || "")}</td>
+          <td>${escapeHtml(ws.raci.i || "")}</td>
+        </tr>
+      `).join("");
+    }
+
+    function renderUpdateOptions() {
+      if (data.workstreams.length === 0) {
+        document.getElementById("updateWorkstream").innerHTML = `<option value="">No workstreams</option>`;
+        return;
+      }
+
+      document.getElementById("updateWorkstream").innerHTML = data.workstreams.map((ws) => `
+        <option value="${ws.id}">${escapeHtml(ws.name)}</option>
+      `).join("");
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function editableValue(element) {
+      return element.innerText.replace(/\n{3,}/g, "\n\n").trim();
+    }
+
+    document.body.addEventListener("focusout", (event) => {
+      const action = event.target.dataset.action;
+      if (!action || event.target.contentEditable !== "true") return;
+      if (!guardEdit()) return;
+      const value = editableValue(event.target);
+
+      if (action === "edit-program-field") {
+        data[event.target.dataset.field] = value;
+      }
+
+      if (action === "edit-workstream-field") {
+        const ws = data.workstreams.find((item) => item.id === event.target.dataset.ws);
+        if (!ws) return;
+        const previousName = ws.name;
+        ws[event.target.dataset.field] = value;
+        if (event.target.dataset.field === "name") {
+          data.updates.forEach((update) => {
+            if (update.workstreamId === ws.id && update.workstreamName === previousName) {
+              update.workstreamName = value;
+            }
+          });
+        }
+      }
+
+      if (action === "edit-milestone-field") {
+        const milestone = data.milestones.find((item) => item.id === event.target.dataset.milestone);
+        if (!milestone) return;
+        milestone[event.target.dataset.field] = value;
+      }
+
+      saveData();
+      render();
+    });
+
+    document.body.addEventListener("keydown", (event) => {
+      const action = event.target.dataset.action;
+      if (!action || event.target.contentEditable !== "true") return;
+      const field = event.target.dataset.field;
+      const singleLine = field === "name" || field === "owner";
+      if (singleLine && event.key === "Enter") {
+        event.preventDefault();
+        event.target.blur();
+      }
+    });
+
+    document.body.addEventListener("change", (event) => {
+      const action = event.target.dataset.action;
+      if (!action) return;
+      if (!guardEdit()) {
+        render();
+        return;
+      }
+
+      if (action === "toggle-task") {
+        const ws = data.workstreams.find((item) => item.id === event.target.dataset.ws);
+        const task = ws.tasks.find((item) => item.id === event.target.dataset.task);
+        task.done = event.target.checked;
+      }
+
+      if (action === "set-ws-status") {
+        const ws = data.workstreams.find((item) => item.id === event.target.dataset.ws);
+        ws.status = event.target.value;
+      }
+
+      if (action === "set-milestone-status") {
+        const milestone = data.milestones.find((item) => item.id === event.target.dataset.milestone);
+        milestone.status = event.target.value;
+      }
+
+      if (action === "update-task-owner") {
+        const ws = data.workstreams.find((item) => item.id === event.target.dataset.ws);
+        const task = ws.tasks.find((item) => item.id === event.target.dataset.task);
+        task.owner = event.target.value.trim();
+      }
+
+      if (action === "update-task-date") {
+        const ws = data.workstreams.find((item) => item.id === event.target.dataset.ws);
+        const task = ws.tasks.find((item) => item.id === event.target.dataset.task);
+        task[event.target.dataset.field] = event.target.value;
+      }
+
+      if (action === "update-milestone-date") {
+        const milestone = data.milestones.find((item) => item.id === event.target.dataset.milestone);
+        milestone[event.target.dataset.field] = event.target.value;
+      }
+
+      saveData();
+      render();
+    });
+
+    document.body.addEventListener("click", (event) => {
+      const action = event.target.dataset.action;
+      if (action && !guardEdit()) return;
+      if (action === "delete-task") {
+        const ws = data.workstreams.find((item) => item.id === event.target.dataset.ws);
+        ws.tasks = ws.tasks.filter((task) => task.id !== event.target.dataset.task);
+        saveData();
+        render();
+      }
+
+      if (action === "delete-workstream") {
+        const ws = data.workstreams.find((item) => item.id === event.target.dataset.ws);
+        if (!ws) return;
+        const confirmed = confirm(`Delete workstream "${ws.name}"? This will also remove its weekly updates.`);
+        if (!confirmed) return;
+        data.workstreams = data.workstreams.filter((item) => item.id !== ws.id);
+        data.updates = data.updates.filter((update) => update.workstreamId !== ws.id);
+        saveData();
+        render();
+      }
+    });
+
+    document.body.addEventListener("submit", (event) => {
+      const action = event.target.dataset.action;
+      if (action !== "add-task") return;
+      event.preventDefault();
+      if (!guardEdit()) return;
+      const ws = data.workstreams.find((item) => item.id === event.target.dataset.ws);
+      const taskInput = event.target.querySelector('input[name="task"]');
+      const ownerInput = event.target.querySelector('input[name="owner"]');
+      const targetDateInput = event.target.querySelector('input[name="targetDate"]');
+      const actualDateInput = event.target.querySelector('input[name="actualDate"]');
+      ws.tasks.push({
+        id: crypto.randomUUID(),
+        name: taskInput.value.trim(),
+        owner: ownerInput.value.trim(),
+        targetDate: targetDateInput.value,
+        actualDate: actualDateInput.value,
+        done: false
+      });
+      taskInput.value = "";
+      ownerInput.value = "";
+      targetDateInput.value = "";
+      actualDateInput.value = "";
+      saveData();
+      render();
+    });
+
+    navButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        navButtons.forEach((item) => item.classList.remove("active"));
+        screens.forEach((screen) => screen.classList.remove("active"));
+        button.classList.add("active");
+        document.getElementById(button.dataset.screenTarget).classList.add("active");
+      });
+    });
+
+    document.getElementById("updateForm").addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (!guardEdit()) return;
+      const ws = data.workstreams.find((item) => item.id === document.getElementById("updateWorkstream").value);
+      if (!ws) return;
+      const status = document.getElementById("updateStatus").value;
+      ws.status = status;
+      data.updates.push({
+        id: crypto.randomUUID(),
+        date: new Date().toISOString().slice(0, 10),
+        submitterName: document.getElementById("submitterName").value.trim(),
+        workstreamId: ws.id,
+        workstreamName: ws.name,
+        status,
+        done: document.getElementById("doneText").value.trim(),
+        next: document.getElementById("nextText").value.trim(),
+        blocker: document.getElementById("blockerText").value.trim(),
+        support: document.getElementById("supportText").value.trim()
+      });
+      event.target.reset();
+      saveData();
+      render();
+    });
+
+    document.getElementById("addWorkstreamBtn").addEventListener("click", () => {
+      if (!guardEdit()) return;
+      dialog.classList.add("open");
+      document.getElementById("wsName").focus();
+    });
+
+    document.getElementById("closeDialogBtn").addEventListener("click", () => {
+      dialog.classList.remove("open");
+    });
+
+    document.getElementById("workstreamForm").addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (!guardEdit()) return;
+      data.workstreams.push({
+        id: crypto.randomUUID(),
+        name: document.getElementById("wsName").value.trim(),
+        owner: document.getElementById("wsOwner").value.trim(),
+        goal: document.getElementById("wsGoal").value.trim(),
+        status: "yellow",
+        raci: {
+          a: document.getElementById("wsA").value.trim(),
+          r: document.getElementById("wsR").value.trim(),
+          c: document.getElementById("wsC").value.trim(),
+          i: document.getElementById("wsI").value.trim()
+        },
+        tasks: []
+      });
+      event.target.reset();
+      dialog.classList.remove("open");
+      saveData();
+      render();
+    });
+
+    document.getElementById("exportBtn").addEventListener("click", () => {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${data.name.toLowerCase().replaceAll(" ", "-")}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+    });
+
+    document.getElementById("importBtn").addEventListener("click", () => {
+      document.getElementById("fileInput").click();
+    });
+
+    document.getElementById("authBtn").addEventListener("click", async () => {
+      if (!isCloudMode) {
+        canEdit = !canEdit;
+        render();
+        setSyncState(canEdit ? "Local editable" : "Local read-only");
+        return;
+      }
+
+      if (canEdit) {
+        accessToken = "";
+        currentUserEmail = "";
+        localStorage.removeItem("pm_supabase_access_token");
+        localStorage.removeItem("pm_user_email");
+        canEdit = false;
+        render();
+        setSyncState("Cloud read-only");
+        return;
+      }
+
+      const email = prompt("Enter editor email");
+      if (!email) return;
+      const response = await fetch(`${supabaseUrl}/auth/v1/otp`, {
+        method: "POST",
+        headers: supabaseHeaders(false),
+        body: JSON.stringify({
+          email,
+          create_user: true,
+          options: {
+            email_redirect_to: location.href.split("#")[0]
+          }
+        })
+      });
+      if (!response.ok) {
+        alert("Unable to send sign-in link.");
+        return;
+      }
+      alert("Check your email for the sign-in link.");
+      setSyncState("Sign-in link sent");
+    });
+
+    document.getElementById("fileInput").addEventListener("change", async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+      if (!guardEdit()) return;
+      const text = await file.text();
+      data = JSON.parse(text);
+      saveData();
+      render();
+      event.target.value = "";
+    });
+
+    loadCloudData();
+  </script>
+</body>
+</html>
