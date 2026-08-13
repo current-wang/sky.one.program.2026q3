@@ -1715,21 +1715,28 @@
 
       const email = prompt("Enter editor email");
       if (!email) return;
-      const redirectTo = location.href.split("#")[0];
-      const response = await fetch(`${supabaseUrl}/auth/v1/otp?redirect_to=${encodeURIComponent(redirectTo)}`, {
+      const password = prompt("Enter password");
+      if (!password) return;
+      const response = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
         method: "POST",
         headers: supabaseHeaders(false),
         body: JSON.stringify({
           email,
-          create_user: true
+          password
         })
       });
       if (!response.ok) {
-        alert("Unable to send sign-in link.");
+        alert("Invalid email or password.");
         return;
       }
-      alert("Check your email for the sign-in link.");
-      setSyncState("Sign-in link sent");
+      const session = await response.json();
+      accessToken = session.access_token || "";
+      currentUserEmail = session.user?.email || email;
+      localStorage.setItem("pm_supabase_access_token", accessToken);
+      localStorage.setItem("pm_user_email", currentUserEmail);
+      canEdit = Boolean(accessToken);
+      render();
+      setSyncState(`Cloud editable · ${currentUserEmail}`);
     });
 
     document.getElementById("fileInput").addEventListener("change", async (event) => {
