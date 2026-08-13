@@ -23,7 +23,13 @@ values ('your-editor@example.com')
 on conflict (email) do nothing;
 ```
 
-4. In Supabase Authentication URL settings, add your GitHub Pages URL as an allowed redirect URL, for example:
+4. In Supabase Authentication URL settings, set `Site URL` to your GitHub Pages URL, for example:
+
+```text
+https://<github-user>.github.io/<repo-name>/
+```
+
+5. In the same Supabase Authentication URL settings, add the same GitHub Pages URL as an allowed redirect URL:
 
 ```text
 https://<github-user>.github.io/<repo-name>/
