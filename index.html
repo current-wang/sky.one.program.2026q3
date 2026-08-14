@@ -474,6 +474,72 @@
       min-width: 0;
     }
 
+    .task-progress {
+      grid-column: 2 / 3;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .task-progress .bar {
+      height: 5px;
+    }
+
+    .subtask-list {
+      grid-column: 2 / 3;
+      display: grid;
+      gap: 6px;
+      padding-top: 2px;
+    }
+
+    .subtask {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 7px;
+      color: #42526e;
+      font-size: 12px;
+    }
+
+    .subtask input[type="checkbox"] {
+      width: 14px;
+      height: 14px;
+    }
+
+    .subtask.done span {
+      color: var(--muted);
+      text-decoration: line-through;
+    }
+
+    .subtask button {
+      min-height: 22px;
+      width: 22px;
+      font-size: 13px;
+    }
+
+    .subtask-form {
+      grid-column: 2 / 3;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .subtask-form input {
+      min-height: 28px;
+      padding: 5px 7px;
+      font-size: 12px;
+    }
+
+    .subtask-form button {
+      min-height: 28px;
+      width: 28px;
+      padding: 0;
+    }
+
     .task.done .task-name {
       color: var(--muted);
       text-decoration: line-through;
@@ -807,6 +873,9 @@
       }
 
       .task-meta,
+      .task-progress,
+      .subtask-list,
+      .subtask-form,
       .inline-form input[name="owner"],
       .inline-form input[name="targetDate"],
       .inline-form input[name="actualDate"] {
@@ -1239,6 +1308,15 @@
       if (target) target.textContent = text;
     }
 
+    function normalizeDataShape() {
+      data.workstreams.forEach((ws) => {
+        ws.tasks.forEach((task) => {
+          task.subtasks = task.subtasks || [];
+          syncTaskDone(task);
+        });
+      });
+    }
+
     async function handleSupabaseAuthCallback() {
       const hash = new URLSearchParams(location.hash.slice(1));
       const token = hash.get("access_token");
@@ -1270,8 +1348,23 @@
       return total === 0 ? 0 : Math.round((done / total) * 100);
     }
 
+    function taskProgress(task) {
+      const subtasks = task.subtasks || [];
+      if (subtasks.length === 0) return task.done ? 100 : 0;
+      return percent(subtasks.filter((subtask) => subtask.done).length, subtasks.length);
+    }
+
+    function syncTaskDone(task) {
+      const subtasks = task.subtasks || [];
+      if (subtasks.length > 0) {
+        task.done = subtasks.every((subtask) => subtask.done);
+      }
+    }
+
     function workstreamProgress(ws) {
-      return percent(ws.tasks.filter((task) => task.done).length, ws.tasks.length);
+      if (ws.tasks.length === 0) return 0;
+      const total = ws.tasks.reduce((sum, task) => sum + taskProgress(task), 0);
+      return Math.round(total / ws.tasks.length);
     }
 
     function statusLabel(status) {
@@ -1293,6 +1386,7 @@
     }
 
     function render() {
+      normalizeDataShape();
       setEditableText(document.getElementById("programName"), data.name);
       setEditableText(document.getElementById("programSummary"), data.summary);
       document.getElementById("programName").contentEditable = canEdit;
@@ -1312,8 +1406,8 @@
 
     function renderMetrics() {
       const tasks = data.workstreams.flatMap((ws) => ws.tasks);
-      const doneTasks = tasks.filter((task) => task.done).length;
-      const overall = percent(doneTasks, tasks.length);
+      const totalProgress = tasks.reduce((sum, task) => sum + taskProgress(task), 0);
+      const overall = tasks.length === 0 ? 0 : Math.round(totalProgress / tasks.length);
       const doneMilestones = data.milestones.filter((m) => m.status === "green").length;
       const milestonePct = percent(doneMilestones, data.milestones.length);
       const blockers = data.updates.filter((update) => update.blocker && update.blocker.toLowerCase() !== "none").length;
@@ -1341,18 +1435,40 @@
       const target = document.getElementById(targetId);
       target.innerHTML = data.workstreams.map((ws) => {
         const progress = workstreamProgress(ws);
-        const tasks = ws.tasks.map((task) => `
-          <div class="task ${task.done ? "done" : ""}">
-            <input type="checkbox" ${task.done ? "checked" : ""} data-action="toggle-task" data-ws="${ws.id}" data-task="${task.id}">
-            <span class="task-name">${escapeHtml(task.name)}</span>
-            ${editable ? `<button type="button" title="删除任务" data-action="delete-task" data-ws="${ws.id}" data-task="${task.id}">×</button>` : ""}
-            <div class="task-meta">
-              <input class="task-owner" value="${escapeHtml(task.owner || "")}" placeholder="Owner" data-action="update-task-owner" data-ws="${ws.id}" data-task="${task.id}" aria-label="Task owner">
-              <input class="task-date" type="date" value="${escapeHtml(task.targetDate || "")}" data-action="update-task-date" data-field="targetDate" data-ws="${ws.id}" data-task="${task.id}" aria-label="目标完成时间">
-              <input class="task-date" type="date" value="${escapeHtml(task.actualDate || "")}" data-action="update-task-date" data-field="actualDate" data-ws="${ws.id}" data-task="${task.id}" aria-label="实际完成时间">
+        const tasks = ws.tasks.map((task) => {
+          const taskPct = taskProgress(task);
+          const subtasks = task.subtasks || [];
+          const subtaskItems = subtasks.map((subtask) => `
+            <div class="subtask ${subtask.done ? "done" : ""}">
+              <input type="checkbox" ${subtask.done ? "checked" : ""} ${editable ? "" : "disabled"} data-action="toggle-subtask" data-ws="${ws.id}" data-task="${task.id}" data-subtask="${subtask.id}">
+              <span>${escapeHtml(subtask.name)}</span>
+              ${editable ? `<button type="button" title="删除子任务" data-action="delete-subtask" data-ws="${ws.id}" data-task="${task.id}" data-subtask="${subtask.id}">×</button>` : ""}
             </div>
-          </div>
-        `).join("");
+          `).join("");
+          return `
+            <div class="task ${task.done ? "done" : ""}">
+              <input type="checkbox" ${task.done ? "checked" : ""} ${editable ? "" : "disabled"} data-action="toggle-task" data-ws="${ws.id}" data-task="${task.id}">
+              <span class="task-name">${escapeHtml(task.name)}</span>
+              ${editable ? `<button type="button" title="删除任务" data-action="delete-task" data-ws="${ws.id}" data-task="${task.id}">×</button>` : ""}
+              <div class="task-meta">
+                <input class="task-owner" value="${escapeHtml(task.owner || "")}" placeholder="Owner" ${editable ? "" : "disabled"} data-action="update-task-owner" data-ws="${ws.id}" data-task="${task.id}" aria-label="Task owner">
+                <input class="task-date" type="date" value="${escapeHtml(task.targetDate || "")}" ${editable ? "" : "disabled"} data-action="update-task-date" data-field="targetDate" data-ws="${ws.id}" data-task="${task.id}" aria-label="目标完成时间">
+                <input class="task-date" type="date" value="${escapeHtml(task.actualDate || "")}" ${editable ? "" : "disabled"} data-action="update-task-date" data-field="actualDate" data-ws="${ws.id}" data-task="${task.id}" aria-label="实际完成时间">
+              </div>
+              <div class="task-progress">
+                <div class="bar"><span style="--w:${taskPct}%;--c:var(--teal);"></span></div>
+                <strong>${taskPct}%</strong>
+              </div>
+              ${subtasks.length > 0 ? `<div class="subtask-list">${subtaskItems}</div>` : ""}
+              ${editable ? `
+                <form class="subtask-form" data-action="add-subtask" data-ws="${ws.id}" data-task="${task.id}">
+                  <input name="subtask" placeholder="新增子任务" required>
+                  <button type="submit" title="新增子任务">＋</button>
+                </form>
+              ` : ""}
+            </div>
+          `;
+        }).join("");
         return `
           <article class="panel workstream">
             <div class="workstream-top">
@@ -1533,6 +1649,17 @@
         const ws = data.workstreams.find((item) => item.id === event.target.dataset.ws);
         const task = ws.tasks.find((item) => item.id === event.target.dataset.task);
         task.done = event.target.checked;
+        (task.subtasks || []).forEach((subtask) => {
+          subtask.done = task.done;
+        });
+      }
+
+      if (action === "toggle-subtask") {
+        const ws = data.workstreams.find((item) => item.id === event.target.dataset.ws);
+        const task = ws.tasks.find((item) => item.id === event.target.dataset.task);
+        const subtask = (task.subtasks || []).find((item) => item.id === event.target.dataset.subtask);
+        subtask.done = event.target.checked;
+        syncTaskDone(task);
       }
 
       if (action === "set-ws-status") {
@@ -1576,6 +1703,15 @@
         render();
       }
 
+      if (action === "delete-subtask") {
+        const ws = data.workstreams.find((item) => item.id === event.target.dataset.ws);
+        const task = ws.tasks.find((item) => item.id === event.target.dataset.task);
+        task.subtasks = (task.subtasks || []).filter((subtask) => subtask.id !== event.target.dataset.subtask);
+        syncTaskDone(task);
+        saveData();
+        render();
+      }
+
       if (action === "delete-workstream") {
         const ws = data.workstreams.find((item) => item.id === event.target.dataset.ws);
         if (!ws) return;
@@ -1590,9 +1726,23 @@
 
     document.body.addEventListener("submit", (event) => {
       const action = event.target.dataset.action;
-      if (action !== "add-task") return;
+      if (action !== "add-task" && action !== "add-subtask") return;
       event.preventDefault();
       if (!guardEdit()) return;
+
+      if (action === "add-subtask") {
+        const ws = data.workstreams.find((item) => item.id === event.target.dataset.ws);
+        const task = ws.tasks.find((item) => item.id === event.target.dataset.task);
+        const input = event.target.querySelector('input[name="subtask"]');
+        task.subtasks = task.subtasks || [];
+        task.subtasks.push({ id: crypto.randomUUID(), name: input.value.trim(), done: false });
+        syncTaskDone(task);
+        input.value = "";
+        saveData();
+        render();
+        return;
+      }
+
       const ws = data.workstreams.find((item) => item.id === event.target.dataset.ws);
       const taskInput = event.target.querySelector('input[name="task"]');
       const ownerInput = event.target.querySelector('input[name="owner"]');
@@ -1604,6 +1754,7 @@
         owner: ownerInput.value.trim(),
         targetDate: targetDateInput.value,
         actualDate: actualDateInput.value,
+        subtasks: [],
         done: false
       });
       taskInput.value = "";
